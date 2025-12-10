@@ -242,22 +242,32 @@ function initializeMatrix() {
     const canvas = document.getElementById('matrixCanvas');
     const ctx = canvas.getContext('2d');
     
-    // Set canvas size to window size
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    // Check if user prefers reduced motion
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+        canvas.style.display = 'none';
+        return;
+    }
     
     // Matrix characters - including katakana, latin letters and numbers
     const matrixChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
     const chars = matrixChars.split('');
     
     const fontSize = 14;
-    const columns = canvas.width / fontSize;
+    let drops = [];
+    let animationFrameId;
     
-    // Array to store y-position of each drop
-    const drops = [];
-    for (let i = 0; i < columns; i++) {
-        drops[i] = Math.random() * -100; // Start at random positions above canvas
+    function initializeDrops() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const columns = Math.floor(canvas.width / fontSize);
+        drops = [];
+        for (let i = 0; i < columns; i++) {
+            drops[i] = Math.random() * -100; // Start at random positions above canvas
+        }
     }
+    
+    initializeDrops();
     
     function draw() {
         // Semi-transparent black to create fade effect
@@ -286,14 +296,31 @@ function initializeMatrix() {
             
             drops[i]++;
         }
+        
+        // Use requestAnimationFrame for smooth animation
+        animationFrameId = requestAnimationFrame(draw);
     }
     
     // Start animation
-    setInterval(draw, 35);
+    draw();
     
-    // Resize canvas when window resizes
+    // Debounced resize handler
+    let resizeTimeout;
     window.addEventListener('resize', () => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            initializeDrops();
+        }, 250);
+    });
+    
+    // Listen for reduced motion preference changes
+    window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => {
+        if (e.matches) {
+            cancelAnimationFrame(animationFrameId);
+            canvas.style.display = 'none';
+        } else {
+            canvas.style.display = 'block';
+            draw();
+        }
     });
 }

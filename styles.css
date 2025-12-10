@@ -35,7 +35,7 @@
 
 /* Respect system theme preference by default */
 @media (prefers-color-scheme: light) {
-    :root:not([data-theme="dark"]) {
+    :root:not([data-theme="dark"]):not([data-theme="light"]) {
         --bg-primary: #f0f6f0;
         --bg-secondary: #e8f5e8;
         --bg-tertiary: #ffffff;
