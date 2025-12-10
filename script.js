@@ -42,6 +42,7 @@ let currentSort = 'updated';
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     initializeTheme();
+    initializeMatrix();
     setupEventListeners();
     loadUserData();
     loadRepositories();
@@ -50,9 +51,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Theme Management
 function initializeTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    updateThemeIcon(savedTheme);
+    // Check if user has a saved preference, otherwise use system preference
+    const savedTheme = localStorage.getItem('theme');
+    let theme;
+    
+    if (savedTheme) {
+        theme = savedTheme;
+    } else {
+        // Respect system theme preference
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        theme = prefersDark ? 'dark' : 'light';
+    }
+    
+    document.documentElement.setAttribute('data-theme', theme);
+    updateThemeIcon(theme);
+    
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('theme')) {
+            const newTheme = e.matches ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+    });
 }
 
 function toggleTheme() {
@@ -112,13 +133,12 @@ async function loadRepositories() {
 // UI Updates
 function updateProfileUI(userData) {
     document.getElementById('profileAvatar').src = userData.avatar_url;
-    document.getElementById('profileName').textContent = userData.name || userData.login;
-    document.getElementById('profileBio').textContent = userData.bio || 'GitHub Developer';
+    // Keep the custom name and bio from HTML, don't override
     document.getElementById('repoCount').textContent = userData.public_repos;
     document.getElementById('followerCount').textContent = userData.followers;
     document.getElementById('followingCount').textContent = userData.following;
     document.getElementById('profileLink').href = userData.html_url;
-    document.getElementById('footerName').textContent = userData.name || userData.login;
+    document.getElementById('footerName').textContent = 'Rich Hamilton';
 }
 
 function sortAndRenderRepositories() {
@@ -215,4 +235,65 @@ function escapeHtml(text) {
 
 function setCurrentYear() {
     document.getElementById('currentYear').textContent = new Date().getFullYear();
+}
+
+// Matrix Rain Effect
+function initializeMatrix() {
+    const canvas = document.getElementById('matrixCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas size to window size
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    // Matrix characters - including katakana, latin letters and numbers
+    const matrixChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
+    const chars = matrixChars.split('');
+    
+    const fontSize = 14;
+    const columns = canvas.width / fontSize;
+    
+    // Array to store y-position of each drop
+    const drops = [];
+    for (let i = 0; i < columns; i++) {
+        drops[i] = Math.random() * -100; // Start at random positions above canvas
+    }
+    
+    function draw() {
+        // Semi-transparent black to create fade effect
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Get current theme to determine color
+        const theme = document.documentElement.getAttribute('data-theme');
+        const matrixColor = theme === 'light' ? '#88cc88' : '#00ff41';
+        
+        ctx.fillStyle = matrixColor;
+        ctx.font = fontSize + 'px monospace';
+        
+        for (let i = 0; i < drops.length; i++) {
+            // Random character
+            const char = chars[Math.floor(Math.random() * chars.length)];
+            const x = i * fontSize;
+            const y = drops[i] * fontSize;
+            
+            ctx.fillText(char, x, y);
+            
+            // Reset drop randomly or when it goes off screen
+            if (y > canvas.height && Math.random() > 0.975) {
+                drops[i] = 0;
+            }
+            
+            drops[i]++;
+        }
+    }
+    
+    // Start animation
+    setInterval(draw, 35);
+    
+    // Resize canvas when window resizes
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
 }
