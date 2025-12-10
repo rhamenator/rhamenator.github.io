@@ -161,10 +161,6 @@ function createRepoCard(repo) {
            </div>`
         : '';
     
-    const visibility = repo.private 
-        ? '<span class="repo-visibility">Private</span>'
-        : '<span class="repo-visibility">Public</span>';
-    
     card.innerHTML = `
         <div class="repo-header">
             <span class="repo-icon">📦</span>
@@ -172,7 +168,7 @@ function createRepoCard(repo) {
                 <a href="${repo.html_url}" target="_blank" rel="noopener noreferrer" class="repo-name">
                     ${escapeHtml(repo.name)}
                 </a>
-                ${visibility}
+                <span class="repo-visibility">Public</span>
             </div>
         </div>
         ${description}
